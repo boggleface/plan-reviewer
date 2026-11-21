@@ -21,3 +21,15 @@ def test_dependent_task_starts_after_its_dependency():
     by_id = {item["id"]: item for item in result["schedule"]}
     assert by_id["B"]["start_day"] == 3
     assert result["end_day"] == 5
+
+
+def test_circular_dependencies_are_reported():
+    result = schedule([
+        task("A", 3, ["B"]),
+        task("B", 2, ["A"]),
+    ], 10)
+
+    assert result["status"] == "cycle"
+    assert result["schedule"] == []
+    assert result["end_day"] is None
+    assert set(result["cycle"]) == {"A", "B"}
