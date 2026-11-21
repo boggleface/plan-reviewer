@@ -36,6 +36,8 @@ A task starts at or after the `end_day` of every task in its `depends_on` list. 
 
 The response's top-level `end_day` is the largest task `end_day` (0 for an empty schedule). Its `deadline_day` equals the request's deadline. `meets_deadline` is the boolean result of `end_day <= deadline_day`, and the integer `days_late` is `max(0, end_day - deadline_day)`. The `cycle` list is empty when `status` is `"scheduled"`.
 
+A scheduled response may include `optimal`, a boolean indicating whether the smallest possible `end_day` was proven. If it is false, the schedule is feasible but may not have the smallest `end_day`.
+
 A circular dependency also returns HTTP 200. For example, if A depends on B and B depends on A, a response is:
 
 ```json

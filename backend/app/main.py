@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, field_validator
 
-from .scheduler import schedule
+from .scheduler import ScheduleOptimizationError, schedule
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data"
@@ -33,6 +33,19 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(
         status_code=400,
         content={"detail": jsonable_encoder(exc.errors()), "message": "Invalid request payload"},
+    )
+
+
+@app.exception_handler(ScheduleOptimizationError)
+async def schedule_optimization_exception_handler(
+    request: Request, exc: ScheduleOptimizationError
+):
+    return JSONResponse(
+        status_code=503,
+        content={
+            "detail": str(exc),
+            "message": "Could not produce a feasible schedule.",
+        },
     )
 
 

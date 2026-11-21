@@ -1,9 +1,11 @@
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.scheduler import schedule  # noqa: E402
+from ortools.sat.python import cp_model  # noqa: E402
 
 
 def task(id, duration_days, depends_on=(), owner=None):
@@ -104,6 +106,86 @@ def test_contract_example_produces_correct_schedule():
     assert by_id["D"]["start_day"] >= by_id["C"]["end_day"]
 
 
+def test_finds_optimal_schedule_for_owner_resource_counterexample():
+    tasks = [
+        task("T0", 3, owner="C"),
+        task("T1", 5, ["T0"], owner="B"),
+        task("T2", 4, owner="B"),
+    ]
+
+    result = schedule(tasks, 100)
+    by_id = {item["id"]: item for item in result["schedule"]}
+
+    assert result["end_day"] == 9
+    assert by_id["T0"] == {"id": "T0", "start_day": 0, "end_day": 3}
+    assert by_id["T2"] == {"id": "T2", "start_day": 0, "end_day": 4}
+    assert by_id["T1"] == {"id": "T1", "start_day": 4, "end_day": 9}
+
+
+def test_feasible_unproven_solver_result_is_returned(monkeypatch):
+    monkeypatch.setattr(
+        cp_model.CpSolver,
+        "Solve",
+        lambda self, model: cp_model.FEASIBLE,
+    )
+    monkeypatch.setattr(
+        cp_model.CpSolver,
+        "Value",
+        lambda self, variable: {"start_A": 0, "end_A": 1, "makespan": 1}[
+            variable.Name()
+        ],
+    )
+
+    result = schedule([task("A", 1)], 10)
+
+    assert result["status"] == "scheduled"
+    assert result["schedule"] == [{"id": "A", "start_day": 0, "end_day": 1}]
+    assert result["end_day"] == 1
+    assert result["optimal"] is False
+
+
+def test_unknown_solver_result_falls_back_to_feasible_schedule(monkeypatch):
+    monkeypatch.setattr(
+        cp_model.CpSolver,
+        "Solve",
+        lambda self, model: cp_model.UNKNOWN,
+    )
+
+    result = schedule(
+        [
+            task("A", 2),
+            task("B", 3, ["A"]),
+            task("C", 4),
+        ],
+        20,
+    )
+
+    by_id = {item["id"]: item for item in result["schedule"]}
+    assert result["end_day"] == 9
+    assert by_id["A"]["end_day"] <= by_id["B"]["start_day"]
+    assert result["optimal"] is False
+
+
+def test_sixty_task_schedule_finishes_within_contract_limit():
+    tasks = [
+        task(
+            f"T{i}",
+            (i % 7) + 1,
+            [f"T{i - 1}"] if i else [],
+            owner=f"Owner{i % 5}",
+        )
+        for i in range(60)
+    ]
+
+    started = time.perf_counter()
+    result = schedule(tasks, 500)
+    elapsed = time.perf_counter() - started
+
+    assert result["status"] == "scheduled"
+    assert len(result["schedule"]) == 60
+    assert elapsed < 10
+
+
 def test_deadline_missed():
     result = schedule([task("A", 15)], 10)
     assert result["meets_deadline"] is False
@@ -117,3 +199,11 @@ def test_empty_task_list():
     assert result["schedule"] == []
     assert result["meets_deadline"] is True
     assert result["days_late"] == 0
+
+
+def test_empty_task_list_with_negative_deadline_reports_days_late():
+    result = schedule([], -3)
+
+    assert result["end_day"] == 0
+    assert result["meets_deadline"] is False
+    assert result["days_late"] == 3

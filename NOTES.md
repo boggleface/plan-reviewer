@@ -3,17 +3,14 @@
 ## Time spent
 
 About 2 hours total:
-- ~30 min: Scheduler algorithm (critical-path list scheduling with unary resource constraints) and unit tests.
+- ~30 min: Exact CP-SAT scheduler with unary resource constraints and unit tests.
 - ~20 min: API validation (Pydantic schemas, 400/404 handling) and test coverage.
 - ~45 min: Frontend redesign following WhiteSpace brand (StatusBanner, Timeline, TaskTable with inline edits, PlanText with quote highlighting).
 - ~15 min: Review retry logic and contract verification.
 
 ## What I did
 
-1. **Owner-aware resource scheduling**: The original scheduler computed start days purely from dependency chains, ignoring owner limits and violating the contract. Implemented critical-path list scheduling for the unary resource-constrained project scheduling problem (RCPSP):
-   - Computes critical path lengths (longest path to any sink by duration).
-   - Simulates priority orderings that preserve topological dependencies and finds the earliest non-overlapping slot for each owner.
-   - Preserves cycle detection for circular dependencies and self-loops.
+1. **Owner-aware resource scheduling**: The scheduler uses OR-Tools CP-SAT to minimize project makespan while enforcing dependency precedence and preventing tasks with the same non-null owner from overlapping. It reports circular dependencies, including self-loops. Within its 8-second limit, it returns the best feasible schedule found and marks whether optimality was proven; if the solver finds no feasible schedule, a serial dependency-respecting fallback ensures valid input still receives a schedule.
 2. **Backend validation and error handling**:
    - Added Pydantic schemas validating task constraints (<= 60 tasks, unique IDs, duration >= 1, valid dependencies).
    - Provided clean HTTP 400 JSON responses on validation errors and HTTP 404 for missing plans.
@@ -27,7 +24,6 @@ About 2 hours total:
 
 ## What I cut and why
 
-- **Exact constraint programming solver (e.g. OR-Tools / Z3)**: List scheduling with critical-path priority runs in < 2ms, produces optimal schedules for the problem sizes in scope (<= 60 tasks, 3-5 owners), and introduces zero heavy external C-extensions.
 - **Persistent backend edits**: Nora's what-if edits are maintained in client state rather than mutating the stored JSON files on disk. The stored reviews remain the AI's direct output, while Nora can freely explore what-if scenarios and reset at any time.
 - **Heavy chart libraries**: Built the visual timeline using native flexbox and CSS percentages, keeping the frontend bundle small and fast with zero third-party chart dependencies.
 
@@ -40,7 +36,7 @@ About 2 hours total:
 
 - **Export and print summary** (~1 hour): A 1-page PDF/print view that Nora can attach when emailing the committee back with the verbatim quotes and schedule verdict.
 - **What-if undo/redo stack** (~30 min): History state for exploring multiple edit scenarios.
-- **Exact branch-and-bound optimizer for edge cases** (~1.5 hours): Optional fallback solver for non-standard RCPSP instances with complex multi-resource interactions.
+- **Optimization diagnostics** (~1 hour): Surface solver duration and optimality diagnostics in an optional debug view for unusually difficult schedules.
 
 ## How I used AI tools
 

@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+from ortools.sat.python import cp_model
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -128,3 +129,31 @@ def test_schedule_returns_cycle():
     assert data["status"] == "cycle"
     assert set(data["cycle"]) == {"A", "B"}
     assert data["end_day"] is None
+
+
+def test_schedule_returns_feasible_result_when_solver_cannot_prove_optimality(monkeypatch):
+    monkeypatch.setattr(
+        cp_model.CpSolver,
+        "Solve",
+        lambda self, model: cp_model.FEASIBLE,
+    )
+    monkeypatch.setattr(
+        cp_model.CpSolver,
+        "Value",
+        lambda self, variable: {"start_A": 0, "end_A": 1, "makespan": 1}[
+            variable.Name()
+        ],
+    )
+    response = client.post(
+        "/api/schedule",
+        json={
+            "tasks": [
+                {"id": "A", "name": "Task A", "owner": None, "duration_days": 1, "depends_on": []},
+            ],
+            "deadline_day": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["end_day"] == 1
+    assert response.json()["optimal"] is False

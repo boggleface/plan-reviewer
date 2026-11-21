@@ -8,6 +8,7 @@ export type ScheduleResult = {
   meets_deadline: boolean | null;
   days_late: number | null;
   cycle: string[];
+  optimal?: boolean;
 };
 
 type Props = {
@@ -59,6 +60,9 @@ export const StatusBanner: React.FC<Props> = ({
                   : `${schedule.deadline_day - (schedule.end_day || 0)} days to spare.`
               )}
               {isLate && 'The plan cannot meet its deadline.'}
+              {schedule.status === 'scheduled' && schedule.optimal === false && (
+                <> The shortest finish was not proven; this schedule may not be the earliest possible.</>
+              )}
               {isCycle && (
                 <>
                   Tasks {schedule.cycle.join(' and ')} depend on each other.
