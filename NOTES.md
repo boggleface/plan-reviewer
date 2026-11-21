@@ -3,10 +3,10 @@
 ## Time spent
 
 About 2 hours total:
-- ~30 min: Exact CP-SAT scheduler with unary resource constraints and unit tests.
-- ~20 min: API validation (Pydantic schemas, 400/404 handling) and test coverage.
-- ~45 min: Frontend redesign following WhiteSpace brand (StatusBanner, Timeline, TaskTable with inline edits, PlanText with quote highlighting).
-- ~15 min: Review retry logic and contract verification.
+- ~20 min: Exploring repo, reading requirements, setup API key + schedular error fix
+- ~45 min: Creating re-write plan and code generation + verification
+- ~30 min: DevOps - setting up GitHub repo, hosting front and backends and verification
+- ~30 min: Final manual + AI testing and revision to scheduling method
 
 ## What I did
 
