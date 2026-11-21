@@ -2,6 +2,7 @@ import json
 import os
 import re
 import sys
+import time
 
 from openai import OpenAI
 
@@ -173,31 +174,39 @@ def _validate_review(review, plan_text):
     return review
 
 
-def review_plan(text, client=None):
+def review_plan(text, client=None, max_retries=3):
     client = client or OpenAI(
         api_key=os.environ["OPENROUTER_API_KEY"],
         base_url=os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
     )
-    reply = client.chat.completions.create(
-        model=os.environ.get("REVIEW_MODEL", DEFAULT_MODEL),
-        max_tokens=16000,
-        response_format={
-            "type": "json_schema",
-            "json_schema": {
-                "name": "plan_review",
-                "strict": True,
-                "schema": REVIEW_SCHEMA,
-            },
-        },
-        messages=[
-            {
-                "role": "system",
-                "content": "Follow the JSON schema exactly. Do not use Markdown fences.",
-            },
-            {"role": "user", "content": PROMPT + "\n\n" + text},
-        ],
-    )
-    return _validate_review(_parse_json(_get_content(reply)), text)
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            reply = client.chat.completions.create(
+                model=os.environ.get("REVIEW_MODEL", DEFAULT_MODEL),
+                max_tokens=16000,
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "plan_review",
+                        "strict": True,
+                        "schema": REVIEW_SCHEMA,
+                    },
+                },
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Follow the JSON schema exactly. Do not use Markdown fences.",
+                    },
+                    {"role": "user", "content": PROMPT + "\n\n" + text},
+                ],
+            )
+            return _validate_review(_parse_json(_get_content(reply)), text)
+        except Exception as e:
+            last_error = e
+            if attempt < max_retries - 1:
+                time.sleep(2**attempt)
+    raise last_error
 
 
 if __name__ == "__main__":
