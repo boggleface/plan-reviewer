@@ -24,6 +24,7 @@ About 2 hours total:
 
 ## What I cut and why
 
+- **Plan upload and automatic AI review**: Nora has no workflow to receive or upload a new plan, and no incoming plan automatically triggers the AI review. Plans currently enter the system by being added to `data/plans/` by a developer or through the review command, and a corresponding stored review must also be generated before the app can display it. The prototype concentrated the available time on parsing, scheduling, verification, and the review interface rather than intake infrastructure. Adding reliable intake would require a new upload and persistence layer, authenticated ingestion or mailbox/webhook integration, async job handling, and a way to manage model/API failures in the deployed environment.
 - **Persistent backend edits**: Nora's what-if edits are maintained in client state rather than mutating the stored JSON files on disk. The stored reviews remain the AI's direct output, while Nora can freely explore what-if scenarios and reset at any time.
 - **Heavy chart libraries**: Built the visual timeline using native flexbox and CSS percentages, keeping the frontend bundle small and fast with zero third-party chart dependencies.
 
@@ -34,13 +35,13 @@ About 2 hours total:
 
 ## What I would do next and a rough estimate
 
-- **Export and print summary** (~1 hour): A 1-page PDF/print view that Nora can attach when emailing the committee back with the verbatim quotes and schedule verdict.
-- **What-if undo/redo stack** (~30 min): History state for exploring multiple edit scenarios.
-- **Optimization diagnostics** (~1 hour): Surface solver duration and optimality diagnostics in an optional debug view for unusually difficult schedules.
+- **Plan upload and management** (~2-3 hours): Let Nora upload plans and manage the stored plan and review lifecycle.
+- **Better persistence** (~2-3 hours): Replace file-based plan and review storage with a database to support reliable saving, querying, and concurrent use.
+- **Observability and user feedback** (~2-3 hours): Add Grafana dashboards or similar monitoring for application health and model-performance metrics, along with in-app controls for collecting Nora's user-satisfaction feedback.
 
 ## How I used AI tools
 
-Used an AI assistant to scaffold boilerplate components, explore heuristic tie-breakers for RCPSP, and verify contract check edge cases. All generated code was inspected, tested against `check_contract.py`, and verified with automated test suites.
+I first used Copilot to explore the codebase, fix cyclic-dependency handling, and switch to a free model for generating reviews. For the rewrite, I created a plan with Claude Opus 4.6 using Google Antigravity on the free tier. I then implemented the changes using Gemini 3.5 Flash according to my available budget. From there, I verified the implementation again with Copilot and upgraded the scheduling algorithm to CP-SAT, an exact constraint programming solver, for more accurate schedules. Verification included my own manual testing, manual code review, AI code review, and exploratory testing.
 
 ## Environment variables my review command needs
 
