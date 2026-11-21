@@ -39,12 +39,14 @@ cd backend && ../.venv/bin/uvicorn app.main:app --port 8000
 .venv/bin/pytest backend/tests
 ```
 
-To review a plan with a model, set `ANTHROPIC_API_KEY`, and optionally `REVIEW_MODEL`, then run:
+To review a plan with a model through OpenRouter, set `OPENROUTER_API_KEY`, and optionally `REVIEW_MODEL` and `OPENROUTER_BASE_URL`, then run:
 
 ```sh
 mkdir -p out
 ./review data/plans/spring-market.md out/spring-market.json
 ```
+
+The default model is `nvidia/nemotron-3.5-super-vl:free`. No API key is needed when using the stored reviews in `data/reviews/`.
 
 The `Dockerfile` builds one container that serves the page and the API on `$PORT`, 8000 by default.
 
