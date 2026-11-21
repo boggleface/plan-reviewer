@@ -16,6 +16,14 @@ def test_plans_are_listed():
     assert {plan["id"] for plan in response.json()} == {"spring-market", "lantern-festival", "harbour-run"}
 
 
+def test_pages_origin_is_allowed_by_cors():
+    response = client.get(
+        "/api/plans",
+        headers={"Origin": "https://boggleface.github.io"},
+    )
+    assert response.headers["access-control-allow-origin"] == "https://boggleface.github.io"
+
+
 def test_get_existing_plan():
     response = client.get("/api/plans/spring-market")
     assert response.status_code == 200

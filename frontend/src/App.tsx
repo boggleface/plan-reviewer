@@ -7,6 +7,8 @@ import { TaskTable } from './components/TaskTable';
 import { FindingsPanel, Finding } from './components/FindingsPanel';
 import { PlanText } from './components/PlanText';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '');
+
 type PlanSummary = {
   id: string;
   title: string;
@@ -52,7 +54,7 @@ export default function App() {
 
   // Fetch plan list on load
   useEffect(() => {
-    fetch('/api/plans')
+    fetch(`${API_BASE_URL}/api/plans`)
       .then((res) => res.json())
       .then((items: PlanSummary[]) => {
         setPlans(items);
@@ -70,7 +72,7 @@ export default function App() {
     setActiveQuote(null);
     setSelectedTaskId(null);
 
-    fetch(`/api/plans/${selectedId}`)
+    fetch(`${API_BASE_URL}/api/plans/${selectedId}`)
       .then((res) => res.json())
       .then((data: ApiResponse) => {
         const found = plans.find((p) => p.id === selectedId);
@@ -101,7 +103,7 @@ export default function App() {
   const recomputeSchedule = useCallback(
     async (updatedTasks: Task[]) => {
       try {
-        const response = await fetch('/api/schedule', {
+        const response = await fetch(`${API_BASE_URL}/api/schedule`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

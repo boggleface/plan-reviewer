@@ -50,6 +50,14 @@ The default model is `nvidia/nemotron-3.5-super-vl:free`. No API key is needed w
 
 The `Dockerfile` builds one container that serves the page and the API on `$PORT`, 8000 by default.
 
+## Deploy the frontend to GitHub Pages
+
+The workflow in `.github/workflows/deploy-pages.yml` builds `frontend/dist` and deploys it when changes are pushed to `main` (or when started manually). It configures the app for `https://boggleface.github.io/plan-reviewer/` and points API requests at the separately hosted Render backend.
+
+In the repository's GitHub settings, open **Pages** and set the build and deployment source to **GitHub Actions**. The workflow handles the rest. The backend allows requests from the Pages origin; keep the API URL in the workflow's `VITE_API_BASE_URL` build environment in sync if the backend address changes.
+
+For local development, run Vite with `npm run dev` from `frontend`; its `/api` proxy forwards requests to `http://localhost:8000`. The Pages build uses the configured backend URL instead—the dev proxy is not used in production.
+
 ## What we ask
 
 You may change anything, the stack included, as long as the two contracts hold. A good result does this for the events officer:
